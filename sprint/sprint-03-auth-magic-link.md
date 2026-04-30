@@ -33,7 +33,7 @@ Stack consolidato:
 - `@supabase/ssr` (già installato in Sprint 02)
 - Auth Supabase: email + magic link attivi, **signup pubblico DISABILITATO**
 
-Implicazione del signup disabilitato: il magic link funziona solo per utenti già presenti in `auth.users`. Per testare, Paolo crea l'utente di test manualmente da Supabase Studio prima di lanciare il flow.
+Implicazione del signup disabilitato: il magic link funziona solo per utenti già presenti in `auth.users`. **Utente di test già pronto**: `test1@studiocesareo.it` (creato manualmente via SQL admin, email confermata). Il flow va testato con questa email.
 
 ---
 
@@ -48,7 +48,7 @@ Implicazione del signup disabilitato: il magic link funziona solo per utenti gi�
 - Sprint 02 chiuso: scaffolding Next.js attivo in `C:\001-Sviluppo\editorkit\`
 - `.env.local` popolato con credenziali Supabase reali (`editorkit-prod`, già in essere)
 - `npm run dev` parte senza errori sulla baseline corrente
-- Utente di test creato manualmente in `auth.users` di Supabase (Paolo lo fa prima di testare)
+- Utente di test già creato in `auth.users`: `test1@studiocesareo.it` (id `66bca43e-dcff-4a3e-9e53-56aa8a524122`, email confermata, identity email collegata)
 - SMTP SiteGround configurato (sender `noreply@callagent.it`, già attivo)
 
 ---
@@ -507,7 +507,7 @@ git -C C:\001-Sviluppo\editorkit push origin main
 - **Non installare** librerie nuove. Tutto quello che serve è già nel package.json da Sprint 02 (`@supabase/ssr`, `@supabase/supabase-js`, shadcn components base).
 - **Non toccare** `lib/supabase/client.ts` e `lib/supabase/server.ts`. Sono già configurati correttamente.
 - **`exchangeCodeForSession`** funziona perché abbiamo `@supabase/ssr` v0.5+. Se Supabase restituisce errore "code verifier missing", è un problema di cookie/PKCE: in tal caso verificare che il middleware sia attivo (refresh sessione) e che `cookies` sia gestito correttamente dal server client.
-- **Signup disabilitato**: Paolo deve creare l'utente di test manualmente in Supabase Studio → Authentication → Add user → "Create new user" prima di testare. Il magic link a un'email non registrata ritorna errore.
+- **Signup disabilitato**: utente di test `test1@studiocesareo.it` già presente in `auth.users` (creato via SQL admin, email confermata). Usa questa email per testare il flow end-to-end.
 - **In caso di errore bloccante** (es. callback handler che 500-a, middleware che redirect-loop), FERMARE e segnalare a Paolo prima di sostituire approcci. Niente pivot non concordati.
 - **Lingua UI**: italiano. Tutti i testi user-facing in italiano.
 
@@ -547,4 +547,4 @@ Pronto per Sprint 04 (Stripe sandbox) o Sprint 05 (pagina edizione + Heyzine).
 
 ---
 
-*Sprint 03 — Versione 1 — 30 aprile 2026*
+*Sprint 03 — Versione 2 — 30 aprile 2026*
