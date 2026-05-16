@@ -52,7 +52,7 @@ Decisione #32: se trovi contraddizioni interne a questa spec, FERMATI e segnala.
 - Bucket `editions-pdf`: `file_size_limit = 200MB`, mime `application/pdf` (fatto dall'orchestratore via SQL).
 - **Limite globale Storage di progetto**: Paolo lo alza nel dashboard Supabase (vedi §7.1) a ≥ 200MB. Senza questo, l'upload diretto viene comunque rifiutato a livello progetto.
 - Env già su Netlify (verificati live in 06): `INGESTION_TOKEN`, `ADMIN_EMAILS`, `HEYZINE_CLIENT_ID`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`.
-- **Secrets Edge Function** (Paolo li setta via `supabase secrets set` o dashboard, NON committati): `HEYZINE_CLIENT_ID`, `SUPABASE_SERVICE_ROLE_KEY`, `INGESTION_TOKEN`. (`SUPABASE_URL` è iniettato di default nelle Edge Function.)
+- **Secrets Edge Function** (Paolo li setta via `supabase secrets set` o dashboard, NON committati): `HEYZINE_CLIENT_ID`, `INGESTION_TOKEN`. NB: Supabase **riserva il prefisso `SUPABASE_`** per i secret custom delle Edge Function: NON si può creare `SUPABASE_SERVICE_ROLE_KEY` a mano. Ma Supabase **inietta già di default** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` nelle Edge Function: leggerli da `Deno.env` senza settare nulla. (Kimi ha usato un secret custom `SERVICE_ROLE_KEY`: accettabile, ma il default iniettato `SUPABASE_SERVICE_ROLE_KEY` è più pulito.) Lato **Netlify** invece NON c'è restrizione di prefisso: le route trigger/status devono leggere l'esistente `SUPABASE_SERVICE_ROLE_KEY` già configurato, non introdurre un nuovo env `SERVICE_ROLE_KEY`. La route trigger/run per invocare l'Edge Function ha bisogno solo di `INGESTION_TOKEN`, non della service_role.
 - Repo locale `C:\001-Sviluppo\editorkit\`, path assoluti, no cd.
 
 ---
@@ -86,7 +86,7 @@ Dashboard Supabase → Storage → Settings → "Upload file size limit": portar
 
 - Libreria: `tus-js-client` (aggiungere a `package.json`). È la via supportata da Supabase per file grandi; lo shot singolo `upload()` non regge 113MB in modo affidabile.
 - Endpoint resumable Supabase: `${NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`.
-- Autorizzazione: signed upload URL/token generato server-side (vedi §7.3) — il browser NON usa mai la service_role. Il token autorizza la scrittura del solo path assegnato.
+- Autorizzazione TUS: il client TUS invia header `Authorization: Bearer <access_token della sessione admin loggata>` + `x-upsert: true`. La RLS su `storage.objects`/`s3_multipart_uploads`/`s3_multipart_uploads_parts` (migration 005, già applicata dall'orchestratore) autorizza il ruolo `authenticated` sul solo bucket `editions-pdf`. NON usare il token di `createSignedUploadUrl` né l'anon key per il path TUS: non sono il contesto `authenticated` e la RLS li nega (403 "new row violates RLS"). Il browser NON usa mai la service_role. [CORREZIONE orchestratore: la formulazione precedente "signed upload URL/token" era errata per il path resumable.]
 - Chunk size: usa il valore raccomandato Supabase (6MB) — Supabase TUS richiede chunk di 6MB esatti tranne l'ultimo. Non inventare un valore diverso.
 - Metadata TUS: `bucketName=editions-pdf`, `objectName=<storagePath>`, `contentType=application/pdf`, `cacheControl=3600`.
 - La UI mostra avanzamento (%). A upload completato, il client passa allo step trigger (§7.5).
