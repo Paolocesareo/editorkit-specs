@@ -4,7 +4,7 @@ Sprint specs e documentazione tecnica del progetto EditorKit (brand pubblico: **
 
 Questo repository è **pubblico** per consentire agli agenti di sviluppo (Kimi Code, Claude Code) di leggere gli spec via URL raw GitHub senza autenticazione.
 
-**Nessun segreto è committato qui** — credenziali, API key, password vivono solo in `.env.local` o nei pannelli dei servizi (Supabase, Stripe, ecc.).
+**Nessun segreto è committato qui** — credenziali, API key, password vivono solo in `.env.local` o nei pannelli dei servizi.
 
 ## Indice sprint
 
@@ -14,11 +14,12 @@ Questo repository è **pubblico** per consentire agli agenti di sviluppo (Kimi C
 - [Sprint 03b — Deploy Netlify staging](./sprint/sprint-03b-netlify-staging.md) — Owner: Claude Code — chiuso
 - [Sprint 05 — Pagina edizione + embed Heyzine](./sprint/sprint-05-pagina-edizione.md) — Owner: Claude Code — chiuso
 - [Sprint 05b — Edicola pubblica con copertine](./sprint/sprint-05b-edicola-pubblica.md) — Owner: Claude Code — chiuso
-- [Sprint 05c — Polish edicola 2 livelli + brand FlipKit](./sprint/sprint-05c-polish-edicola.md) — Owner: Claude Code — attivo
+- [Sprint 05c — Polish edicola 2 livelli + brand FlipKit](./sprint/sprint-05c-polish-edicola.md) — Owner: Claude Code — chiuso
+- [Sprint 05d — Pagina /account minimal + toolbar sfogliatore](./sprint/sprint-05d-account-toolbar.md) — Owner: Claude Code — attivo
 
 ## Workflow
 
-Spec scritta dall'orchestratore → push qui (pubblico) → l'agente owner la legge via raw URL → output `[NOME DONE]` → orchestratore aggiorna indice + workspace.
+Spec scritta dall'orchestratore → push qui (pubblico) → l'agente owner la legge via raw URL → output `[NOME DONE]` → orchestratore verifica + aggiorna indice + workspace.
 
 ---
 
