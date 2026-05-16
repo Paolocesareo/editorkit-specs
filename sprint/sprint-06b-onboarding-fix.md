@@ -82,15 +82,16 @@ Decisione #32: se trovi contraddizioni interne a questa spec, FERMATI e segnala.
 
 Dashboard Supabase → Storage → Settings → "Upload file size limit": portarlo a **≥ 200MB**. Il limite per-bucket è già 200MB ma il globale di progetto, se inferiore, vince e blocca. Kimi: nella spec assumi che Paolo lo abbia fatto; nei test, se l'upload viene rifiutato con errore size a livello progetto, FERMATI e segnala (è azione Paolo, non un bug tuo).
 
-### 7.2 Upload resumable diretto browser → Supabase Storage
+### 7.2 Upload diretto browser → Supabase Storage via SINGLE PUT (no TUS)
 
-- Libreria: `tus-js-client` (aggiungere a `package.json`). È la via supportata da Supabase per file grandi; lo shot singolo `upload()` non regge 113MB in modo affidabile.
-- Endpoint resumable Supabase: `${NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`.
-- Autorizzazione TUS: il client TUS invia header `Authorization: Bearer <access_token della sessione admin loggata>` + `x-upsert: true`. La RLS su `storage.objects`/`s3_multipart_uploads`/`s3_multipart_uploads_parts` (migration 005, già applicata dall'orchestratore) autorizza il ruolo `authenticated` sul solo bucket `editions-pdf`. NON usare il token di `createSignedUploadUrl` né l'anon key per il path TUS: non sono il contesto `authenticated` e la RLS li nega (403 "new row violates RLS"). Il browser NON usa mai la service_role. [CORREZIONE orchestratore: la formulazione precedente "signed upload URL/token" era errata per il path resumable.]
-- Chunk size: usa il valore raccomandato Supabase (6MB) — Supabase TUS richiede chunk di 6MB esatti tranne l'ultimo. Non inventare un valore diverso.
-- Metadata TUS: `bucketName=editions-pdf`, `objectName=<storagePath>`, `contentType=application/pdf`, `cacheControl=3600`.
-- La UI mostra avanzamento (%). A upload completato, il client passa allo step trigger (§7.5).
-- Resume: se l'upload si interrompe, `tus-js-client` riprende dallo stesso URL. Non serve logica custom di resume, ma il bottone "Carica" non deve duplicare la riga `editions` se ripremuto (la riga è già `pending`, vedi §7.3: upsert su `(publication_id, edition_date)`).
+**Cambio di rotta (orchestratore, evidenza definitiva).** Il TUS resumable è abbandonato: richiede INSERT su `storage.s3_multipart_uploads`, ma su questo progetto i ruoli `authenticated`/`anon` non hanno il privilegio (grant di default Supabase rimossi da hardening precedente). Le tabelle sono di proprietà di `supabase_storage_admin`; il ruolo cliente `postgres` non può ripristinare il grant (non owner, non membro, non superuser — muro di piattaforma, verificato). Migration 005/006 (policy su `storage.objects`, `public`, scoped al solo bucket, **senza SELECT**) restano valide e NECESSARIE per questo path: il PUT diretto scrive in `storage.objects` come ruolo utente e quelle policy lo autorizzano (verificato via prova SQL: insert objects come authenticated E anon su bucket `editions-pdf` → OK).
+
+- Niente `tus-js-client`, niente endpoint `/upload/resumable`. Rimuovere la dipendenza se aggiunta.
+- Il server genera una **signed upload URL**: `admin.storage.from('editions-pdf').createSignedUploadUrl(storagePath)` (vedi §7.3). Ritorna `{ signedUrl, token, path }`.
+- Il browser carica il file con **un singolo PUT** alla signed URL: `supabase.storage.from('editions-pdf').uploadToSignedUrl(path, token, file, { contentType: 'application/pdf', upsert: true })`. Questo path è già stato verificato funzionante da Kimi (PUT diretto → 200). Scrive solo in `storage.objects`, niente tabelle multipart, niente muro grant.
+- Bypassa Netlify (browser→Supabase diretto, nessun tetto 6MB) e il muro multipart. Limite globale Storage + bucket entrambi a 200MB ≥ 113MB.
+- UI: barra/spinner di avanzamento durante il PUT (il file è grande, l'upload dura; mostrare stato "Caricamento in corso, non chiudere"). `uploadToSignedUrl` non espone progress granulare nativo: accettabile uno spinner indeterminato con messaggio chiaro; NON usare librerie nuove.
+- Tradeoff accettato (pilota): un singolo PUT da ~113MB non ha resume se la connessione cade. Accettabile per il pilota operato da Paolo su connessione stabile. L'evoluzione architetturale corretta (sorgente PDF su Cloudflare R2 con presigned URL, già nell'architettura parcheggiata) è rimandata, NON in scope qui.
 
 ### 7.3 Server action ridotta (driver manuale, zero byte PDF su Netlify)
 
@@ -153,8 +154,8 @@ Auto-deploy Netlify attivo. L'Edge Function va deployata a parte con `supabase f
 
 - [ ] Limite globale Storage progetto ≥ 200MB (azione Paolo, verificata).
 - [ ] Edge Function `ingest-edition` deployata e raggiungibile.
-- [ ] `/admin/onboarding` da admin: form visibile, upload di un PDF **reale pesante (≈100MB+)** completa via TUS con barra di avanzamento, **senza** "This page couldn't load".
-- [ ] Nessun byte di PDF passa da Netlify (verifica a codice: la server action non riceve `File`; l'upload è client→Supabase TUS).
+- [ ] `/admin/onboarding` da admin: form visibile, upload di un PDF **reale pesante (≈100MB+)** completa via SINGLE PUT a signed upload URL (no TUS), con spinner/stato, **senza** "This page couldn't load" e **senza** 403.
+- [ ] Nessun byte di PDF passa da Netlify (verifica a codice: la server action non riceve `File`; l'upload è client→Supabase via signed URL PUT).
 - [ ] Dopo upload: riga `editions` `pending`→`converting`→`ready`, `heyzine_flipbook_id` valorizzato, thumbnail `cdnc.heyzine.com/...jpg` raggiungibile, edizione visibile in `public_editions` e sfogliabile da utente entitled (pagina Sprint 05 invariata).
 - [ ] Nessun timeout: la conversione gira sull'Edge Function, la UI fa polling, il browser non resta appeso 53s+.
 - [ ] Gate admin invariato: non-admin → `/dashboard`, non loggato → `/login`.
@@ -169,6 +170,7 @@ Auto-deploy Netlify attivo. L'Edge Function va deployata a parte con `supabase f
 ## 9. NOTE PER L'AGENTE
 
 - **Non reintrodurre il PDF dentro Netlify in nessuna forma.** È il muro A, è definitivo. Qualunque soluzione che faccia transitare i byte del PDF da una function Netlify è sbagliata per definizione, anche se "funziona" con un PDF piccolo di test. Il test di accettazione usa un PDF reale pesante apposta.
+- **Niente TUS/resumable.** Su questo progetto i grant Supabase sulle tabelle multipart sono assenti e non ripristinabili dal ruolo cliente (muro piattaforma verificato dall'orchestratore). L'unico upload diretto utilizzabile è il **single PUT a signed upload URL**. Migration 005/006 sono già applicate dall'orchestratore e bastano per il PUT su `storage.objects`. Migration 007 (grant multipart) è inefficace e superata: ignorarla.
 - **`EdgeRuntime.waitUntil`**: è il meccanismo per cui l'Edge Function risponde subito e converte in background. Se non disponibile/instabile nel runtime corrente, FERMATI e segnala a Paolo invece di tornare a una conversione sincrona che ricrea il muro B.
 - **Decisione #32**: contraddizione interna alla spec → fermati e segnala, non scegliere.
 - **Slug**: la migration 004 ha già fatto il backfill `ops_slug`. Non rifarlo.
