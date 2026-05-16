@@ -15,7 +15,8 @@ Questo repository è **pubblico** per consentire agli agenti di sviluppo (Kimi C
 - [Sprint 05 — Pagina edizione + embed Heyzine](./sprint/sprint-05-pagina-edizione.md) — Owner: Claude Code — chiuso
 - [Sprint 05b — Edicola pubblica con copertine](./sprint/sprint-05b-edicola-pubblica.md) — Owner: Claude Code — chiuso
 - [Sprint 05c — Polish edicola 2 livelli + brand FlipKit](./sprint/sprint-05c-polish-edicola.md) — Owner: Claude Code — chiuso
-- [Sprint 05d — Pagina /account minimal + toolbar sfogliatore](./sprint/sprint-05d-account-toolbar.md) — Owner: Claude Code — attivo
+- [Sprint 05d — Pagina /account minimal + toolbar sfogliatore](./sprint/sprint-05d-account-toolbar.md) — Owner: Claude Code — chiuso
+- [Sprint 06 — Onboarding testate (upload manuale admin, pipeline source-agnostic)](./sprint/sprint-06-onboarding-testate.md) — Owner: Kimi Code — attivo
 
 ## Workflow
 
@@ -23,4 +24,5 @@ Spec scritta dall'orchestratore → push qui (pubblico) → l'agente owner la le
 
 ---
 
-*Repo creato: 29 aprile 2026 — indice aggiornato: 16 maggio 2026*
+*Repo creato: 29 aprile 2026 — indice aggiornato: 16 maggio 2026 (sera) — Sprint 06 aperto*
+
