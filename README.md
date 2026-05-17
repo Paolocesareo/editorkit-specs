@@ -19,7 +19,7 @@ Questo repository è **pubblico** per consentire agli agenti di sviluppo (Kimi C
 - [Sprint 06 — Onboarding testate (upload manuale admin, pipeline source-agnostic)](./sprint/sprint-06-onboarding-testate.md) — Owner: Kimi Code — chiuso
 - [Sprint 06b — Onboarding fix: upload diretto single PUT + conversione async Edge Function](./sprint/sprint-06b-onboarding-fix.md) — Owner: Kimi Code — chiuso (verificato live, PDF reale 110MB)
 - [Sprint 07 — Admin entitlement: login staff a password + assegnazione manuale abbonamenti](./sprint/sprint-07-admin-entitlement.md) — Owner: Claude Code — chiuso
-- [Sprint P1 — Ricerca full-text archivio edizioni](./sprint/sprint-P1-ricerca-fulltext.md) — Owner: Kimi Code (backend) + Claude Code (UI) — spec scritta, nodo §3 aperto (attende orchestratore)
+- [Sprint P1 — Ricerca full-text archivio edizioni](./sprint/sprint-P1-ricerca-fulltext.md) — Owner: Kimi Code (backend) + Claude Code (UI) — spec v2, architettura decisa (Opzione B), pronta da assegnare
 
 ## Workflow
 
