@@ -16,8 +16,9 @@ Questo repository è **pubblico** per consentire agli agenti di sviluppo (Kimi C
 - [Sprint 05b — Edicola pubblica con copertine](./sprint/sprint-05b-edicola-pubblica.md) — Owner: Claude Code — chiuso
 - [Sprint 05c — Polish edicola 2 livelli + brand FlipKit](./sprint/sprint-05c-polish-edicola.md) — Owner: Claude Code — chiuso
 - [Sprint 05d — Pagina /account minimal + toolbar sfogliatore](./sprint/sprint-05d-account-toolbar.md) — Owner: Claude Code — chiuso
-- [Sprint 06 — Onboarding testate (upload manuale admin, pipeline source-agnostic)](./sprint/sprint-06-onboarding-testate.md) — Owner: Kimi Code — core consegnato, bloccato su muri piattaforma
-- [Sprint 06b — Onboarding fix: upload diretto resumable + conversione async Edge Function](./sprint/sprint-06b-onboarding-fix.md) — Owner: Kimi Code — attivo
+- [Sprint 06 — Onboarding testate (upload manuale admin, pipeline source-agnostic)](./sprint/sprint-06-onboarding-testate.md) — Owner: Kimi Code — chiuso
+- [Sprint 06b — Onboarding fix: upload diretto single PUT + conversione async Edge Function](./sprint/sprint-06b-onboarding-fix.md) — Owner: Kimi Code — chiuso (verificato live, PDF reale 110MB)
+- [Sprint 07 — Admin entitlement: login staff a password + assegnazione manuale abbonamenti](./sprint/sprint-07-admin-entitlement.md) — Owner: Claude Code — attivo
 
 ## Workflow
 
@@ -25,5 +26,4 @@ Spec scritta dall'orchestratore → push qui (pubblico) → l'agente owner la le
 
 ---
 
-*Repo creato: 29 aprile 2026 — indice aggiornato: 16 maggio 2026 (sera) — Sprint 06b aperto (06 bloccato su muri piattaforma)*
-
+*Repo creato: 29 aprile 2026 — indice aggiornato: 17 maggio 2026 — Sprint 06/06b chiusi, Sprint 07 aperto (Admin entitlement)*
