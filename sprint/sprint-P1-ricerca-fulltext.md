@@ -33,19 +33,30 @@ P1 colma questo divario. È stata scelta come prima mossa perché: alto valore, 
 
 ---
 
-## 3. BIVIO DA SEGNALARE — NON DECIDERE IN AUTONOMIA
+## 3. ARCHITETTURA — DECISA (B) + UN NODO APERTO
 
-> Regola progetto #32: se la spec presenta un nodo non risolto, l'agente FERMA e segnala all'orchestratore, non sceglie da solo.
+### 3.1 Dove gira l'estrazione testo — DECISO: Opzione B (step separato post-ingestione)
 
-**Nodo: dove e quando si estrae il testo.** Tre opzioni con implicazioni diverse. La spec NON sceglie. L'agente deve proporre la sua raccomandazione tecnica con motivazione e **attendere conferma orchestratore prima di implementare**.
+Decisione orchestratore (Paolo, 17/05/2026). **NON è un bivio aperto: implementare B.** Le altre opzioni sono qui solo per tracciabilità della scelta.
 
-- **Opzione A — dentro la Edge Function `ingest-edition` esistente.** Il testo si estrae nello stesso flusso async che già converte su Heyzine. Pro: un solo punto, niente nuova infrastruttura. Contro: il limite runtime/memoria della Edge Function su PDF da 100+MB è già stato un muro noto (memo #46/#47, Sprint 06b); aggiungere l'estrazione testo nello stesso processo può riproporlo.
-- **Opzione B — step separato post-ingestione.** Una seconda funzione/job che parte quando l'edizione è `ready`, scarica il PDF dallo Storage, estrae il testo, popola l'indice. Pro: isola il rischio runtime, fallibile e ritentabile senza toccare il flipbook. Contro: secondo processo da orchestrare e monitorare.
-- **Opzione C — estrazione lato client al momento dell'upload admin.** Il browser dell'admin estrae il testo prima dell'upload e lo manda insieme. Pro: zero carico server. Contro: fragile, dipende dal browser, non funziona per il backfill né per l'ingestione automatica futura (#40/#41) — la scarto in partenza ma la elenco per completezza.
+**B — step separato post-ingestione (DA IMPLEMENTARE).** Una funzione/job distinta che parte quando l'edizione è `ready` (stesso pattern async `EdgeRuntime.waitUntil` già in uso a Sprint 06b — NON infrastruttura nuova), scarica il PDF dallo Storage `editions-pdf`, estrae il testo per pagina, popola `edition_pages_text`. Il flipbook Heyzine e la pubblicazione dell'edizione restano il percorso critico invariato; l'estrazione è additiva, fallibile e ritentabile in isolamento.
 
-**Raccomandazione attesa dall'agente:** valutare A vs B alla luce dei memo Sprint 06b sui limiti di piattaforma e proporre. Indizio non vincolante: B disaccoppia il rischio, coerente con la scelta source-agnostic #40. Ma decide l'orchestratore.
+Motivazione (vincolante, non re-discutere):
+- Il limite runtime/memoria della Edge Function su PDF 100+MB è un muro **già preso** a Sprint 06b (memo #46/#47), non un'ipotesi. L'estrazione testo è l'operazione più pesante della feature: non va sul percorso critico che già funziona.
+- Il backfill delle 5 testate pilota (§7) è per definizione un processo post-hoc su edizioni già `ready`. Con B, backfill e ingestione corrente **usano lo stesso codice**: un pezzo solo, non due strade.
+- La ricerca è additiva: se manca, l'edizione si legge comunque. Trattarla come additiva anche in architettura è coerente col suo valore e protegge l'ingestione end-to-end (costata Sprint 06+06b).
 
-Un secondo nodo minore, sempre da segnalare se emerge: **quale libreria di estrazione testo** regge i PDF reali OPS (impaginati, multi-colonna, 100+MB). Da validare su un PDF reale pilota, non assumere.
+Scartate:
+- **A — dentro `ingest-edition`**: accoppia l'operazione più pesante al percorso critico già al limite. Se salta, niente flipbook E niente testo. Scartata per il rischio noto.
+- **C — estrazione lato client all'upload admin**: fragile, dipende dal browser, non copre backfill né ingestione automatica futura (#40/#41). Scartata in partenza.
+
+Conseguenza ammessa: esiste una finestra in cui un'edizione è pubblicata ma non ancora ricercabile. È innocua (la ricerca è additiva, nessuno si aspetta indicizzazione istantanea). Non introdurre complessità per chiuderla.
+
+### 3.2 NODO APERTO (unico) — libreria di estrazione testo
+
+> Regola progetto #32: nodo non risolto → l'agente propone e attende orchestratore, non sceglie.
+
+**Quale libreria regge i PDF reali OPS** (impaginati, multi-colonna, 100+MB). Questo NON è deciso. L'agente deve: (1) validare la libreria candidata su un **PDF reale pilota** (non un PDF di test sintetico, non assumere), (2) riportare all'orchestratore esito su un PDF vero — qualità testo, tenuta su 100MB, comportamento su pagine multi-colonna, (3) **attendere conferma prima di consolidare la scelta**. Se sul PDF reale la libreria si rivela inadeguata (testo sporco/assente su PDF testuale, OOM, multi-colonna illeggibile), FERMARE e segnalare: è un fermarsi legittimo, su un dato, non una scelta che spettava all'orchestratore a priori.
 
 ---
 
@@ -165,7 +176,8 @@ Regole:
 
 ## 11. NOTA DI PROCESSO PER L'AGENTE
 
-- Spec con nodo aperto al §3: **non scegliere A/B/C da solo. Proporre e attendere.** (#32)
+- §3.1 architettura **DECISA = Opzione B** (step separato post-ingestione). Implementare B, non re-aprire il confronto A/B/C.
+- §3.2 unico nodo aperto = **libreria di estrazione testo**: validare su PDF reale pilota, riportare, attendere orchestratore. Non scegliere a priori. (#32)
 - Non auto-dichiarare "done": la verifica è dell'orchestratore contro i §9 su staging. (#48)
 - Numero migration: verificare l'ultimo applicato sul progetto Supabase `editorkit-prod`, non assumere. Esiste un disallineamento noto repo↔DB sulle migration 005/006/007: leggere il parking lot del workspace prima di numerare.
 - Brand pubblico = FlipKit (UI), interno = editorkit (repo/Supabase/path). Decisione #29.
@@ -173,4 +185,4 @@ Regole:
 
 ---
 
-*Spec P1 v1 — 17 maggio 2026 — ricerca full-text archivio. Origine: backend-surface VNP v0.6 capability P1. Da committare in editorkit-specs e referenziare nell'indice.*
+*Spec P1 v2 — 17 maggio 2026 — ricerca full-text archivio. §3 architettura sciolta su Opzione B (step separato post-ingestione, decisione orchestratore Paolo); unico nodo aperto residuo = libreria estrazione testo da validare su PDF reale. Origine: backend-surface VNP v0.6 capability P1.*
